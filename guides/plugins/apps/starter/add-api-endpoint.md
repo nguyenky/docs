@@ -3,8 +3,9 @@
 This guide shows, how you can add a custom API endpoint that delivers dynamic data starting from zero.
 After reading, you will be able to
 
- * Create the basic setup of an App
+ * Create the basic setup of an app
  * Execute app scripts and use them to model custom logic
+ * Fetch, filter and aggregate data from Shopware
  * Consume HTTP parameters and create responses
 
 ## Prerequisites
@@ -12,7 +13,7 @@ After reading, you will be able to
  * A Shopware cloud store
  * Basic CLI usage (creating files, directories, running commands)
  * Installed shopware-cli tools
- * Twig Syntax
+ * General knowledge of [Twig Syntax](https://twig.symfony.com/)
  * A text editor
 
 ## Create the App Wrapper
@@ -70,7 +71,9 @@ The prefix for our API endpoint is one of the following and cannot be changed:
 
 {% hint style="info" %}
 You might wonder why the storefront shows up in that table. In storefront endpoints you can not only render JSON, but also twig templates.
-But use them with care - whenever you create a Storefront endpoint, your app will not be compatible with headless consumers.   
+But use them with care - whenever you create a Storefront endpoint, your app will not be compatible with headless consumers.
+
+[Custom endpoints](../app-scripts/custom-endpoints.md)
 {% endhint %}
 
 ### Directory structure
@@ -98,12 +101,14 @@ MyApiExtension/
 Let's start with a simple script to see it in action:
 
 {% code title="Resources/scripts/store-api-swag-topseller/topseller-script.twig" %}
+{% raw %}
 ```twig
 {% block response %}
     {% set response = services.response.json({ test: 'This is my API endpoint' }) %}
     {% do hook.setResponse(response) %}
 {% endblock %}
 ```
+{% endraw %}
 {% endcode %}
 
 Next we will install the App using the Shopware CLI.
@@ -145,6 +150,7 @@ However, instead of using curl we recommend using visual clients to test the API
 For now, our script is not really doing anything. Let's change that.
 
 {% code title="Resources/scripts/store-api-swag-topseller/topseller-script.twig" %}
+{% raw %}
 ```twig
 {% block response %}
 
@@ -181,6 +187,7 @@ For now, our script is not really doing anything. Let's change that.
     {% do hook.setResponse(response) %}
 {% endblock %}
 ```
+{% endraw %}
 {% endcode %}
 
 What happened here? 
@@ -209,24 +216,30 @@ To learn more about the structure of search criterias follow the link below:
 
 We now send a request to the database to retrieve the result using
 
+{% raw %}
 ```twig
 {% set orderResult = services.repository.search('order', criteria) %}
 ```
+{% endraw %}
 
 ### Building the response
 
 In the final step, we build the response. We don't want to return the entire result, but just the result of the aggregation.
 
+{% raw %}
 ```twig
 {% set response = services.response.json(orderResult.aggregations.first.jsonSerialize) %}
 ```
+{% endraw %}
 
 So we take the first aggregation of our result (which is the one containing all products with their quantities), convert it to JSON and write it into a `response` variable.
 Afterwards we just set the response of the hook to the result from above and we're done:
 
+{% raw %}
 ```twig
 {% do hook.setResponse(response) %}
 ```
+{% endraw %}
 
 It is important to do all this within the `response` block of the twig script. Otherwise you will get errors when calling the script.
 
@@ -285,7 +298,7 @@ and receive a different result:
           "sum": 3
         },
         "apiAlias": "aggregation_bucket"
-        },
+        }
     ]
 }
 ```
@@ -294,11 +307,14 @@ and receive a different result:
 
 This tutorial covered the basics of app development using app scripts and some filtering and aggregation logic.
 
-Steps like input parameter validation or result formatting were left out to keep the guide short and concise.
+In a proper app you should consider the following points
+
+ * Input parameter validation
+ * Format the result
+ * Define an API contract (endpoint structure) first and build after that
 
 ## Where to continue
 
- * App Scripts Custom Endpoints
- * Twig functions (app scripts)
- * Search Criteria
- * DAL Aggregationss
+ * More on adding [custom endpoints](../app-scripts/custom-endpoints.md)
+ * See how you can use [Twig functions](../app-scripts/README.md#extended-syntax) in app scripts
+ * Working with [DAL Aggregations](./../../../../resources/references/core-reference/dal-reference/aggregations-reference.md)
